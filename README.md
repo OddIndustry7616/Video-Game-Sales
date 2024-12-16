@@ -6,7 +6,7 @@ This project explores and analyzes global video game sales data spanning from th
 Key Objectives
   Identify trends in video game sales over time.
   Analyze the popularity of different platforms and genres.
-  Compare sales performance across regions.
+  Compare sales performance across regions. 
   Uncover relationships between critic/user scores and sales performance.
   Develop actionable insights for game developers and publishers.
   Highlights of the Analysis
