@@ -1,0 +1,165 @@
+# Import Libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import missingno as msno
+from sklearn.preprocessing import StandardScaler
+from scipy import stats
+
+# Load Dataset
+data = pd.read_csv('/content/vgsales.csv')
+
+# Remove rows with years beyond 2015
+data = data[data['Year'] <= 2015]
+
+# Check for missing values
+print(data.isnull().sum())
+
+# Count of games by genre
+print(data['Genre'].value_counts())
+
+# Visualization: Number of games by genre
+plt.figure(figsize=(15, 10))
+sns.countplot(x="Genre", data=data, order=data['Genre'].value_counts().index)
+plt.xticks(rotation=90)
+plt.title("Number of Games by Genre")
+plt.show()
+
+# Visualization: Number of games released per year
+plt.figure(figsize=(15, 10))
+sns.countplot(x="Year", data=data, order=data['Year'].value_counts().index)
+plt.xticks(rotation=90)
+plt.title("Number of Games Released per Year")
+plt.show()
+
+# Visualization: Top 5 years by game releases with genres
+top_years = data['Year'].value_counts().nlargest(5).index
+plt.figure(figsize=(30, 10))
+sns.countplot(x="Year", data=data, hue='Genre', order=top_years)
+plt.xticks(size=16, rotation=90)
+plt.title("Top 5 Years by Game Releases with Genres")
+plt.show()
+
+# Visualization: Year with the highest global sales
+data_year = data.groupby('Year')['Global_Sales'].sum().reset_index()
+plt.figure(figsize=(15, 10))
+sns.barplot(x="Year", y="Global_Sales", data=data_year)
+plt.xticks(rotation=90)
+plt.title("Global Sales by Year")
+plt.show()
+
+# Visualization: Most released genre each year
+year_max_df = data.groupby(['Year', 'Genre']).size().reset_index(name='count')
+year_max_df = year_max_df[year_max_df.groupby('Year')['count'].transform(max) == year_max_df['count']].drop_duplicates(['Year', 'count'])
+plt.figure(figsize=(30, 15))
+sns.barplot(x='Year', y='count', data=year_max_df)
+for index, row in year_max_df.iterrows():
+    plt.text(index, row['count'] + 5, f"{row['Genre']} ---- {row['count']}", ha="center", rotation=90, fontsize=14)
+plt.xticks(rotation=90)
+plt.title("Most Released Genre Each Year")
+plt.show()
+
+# Visualization: Highest-selling genre each year
+year_sale_dx = data.groupby(['Year', 'Genre'])['Global_Sales'].sum().reset_index()
+year_sale_dx = year_sale_dx[year_sale_dx.groupby('Year')['Global_Sales'].transform(max) == year_sale_dx['Global_Sales']].reset_index(drop=True)
+plt.figure(figsize=(30, 18))
+sns.barplot(x='Year', y='Global_Sales', data=year_sale_dx)
+for index, row in year_sale_dx.iterrows():
+    plt.text(index, row['Global_Sales'] + 1, f"{row['Genre']} ---- {round(row['Global_Sales'], 2)}", ha="center", rotation=90, fontsize=14)
+plt.xticks(rotation=90)
+plt.title("Highest-Selling Genre Each Year")
+plt.show()
+
+# Visualization: Global sales by genre
+data_genre = data.groupby('Genre')['Global_Sales'].sum().reset_index().sort_values(by='Global_Sales', ascending=False)
+plt.figure(figsize=(15, 10))
+sns.barplot(x="Genre", y="Global_Sales", data=data_genre)
+plt.xticks(rotation=90)
+plt.title("Global Sales by Genre")
+plt.show()
+
+# Visualization: Global sales by platform
+data_platform = data.groupby('Platform')['Global_Sales'].sum().reset_index().sort_values(by='Global_Sales', ascending=False)
+plt.figure(figsize=(15, 10))
+sns.barplot(x="Platform", y="Global_Sales", data=data_platform)
+plt.xticks(rotation=90)
+plt.title("Global Sales by Platform")
+plt.show()
+
+# Visualization: Top 20 highest-selling games globally
+top_game_sale = data[['Name', 'Year', 'Genre', 'Global_Sales']].nlargest(20, 'Global_Sales')
+plt.figure(figsize=(30, 18))
+sns.barplot(x='Name', y='Global_Sales', data=top_game_sale)
+for index, row in top_game_sale.iterrows():
+    plt.text(index, row['Global_Sales'] - 1, row['Name'], ha="center", rotation=90, fontsize=14)
+plt.xticks(rotation=90, fontsize=14)
+plt.xlabel('Release Year')
+plt.title("Top 20 Highest-Selling Games Globally")
+plt.show()
+
+# Visualization: Sales comparison by genre across regions
+comp_genre = data.groupby('Genre')[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum()
+plt.figure(figsize=(15, 10))
+sns.heatmap(comp_genre, annot=True, fmt=".1f", cmap="Blues")
+plt.title("Regional Sales Comparison by Genre")
+plt.show()
+
+# Visualization: Sales comparison by genre and region
+comp_table = pd.melt(comp_genre.reset_index(), id_vars=['Genre'], var_name='Sale_Area', value_name='Sales')
+plt.figure(figsize=(15, 10))
+sns.barplot(x='Genre', y='Sales', hue='Sale_Area', data=comp_table)
+plt.title("Regional Sales by Genre")
+plt.show()
+
+# Visualization: Regional sales by platform
+comp_platform = data.groupby('Platform')[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum().reset_index()
+comp_table = pd.melt(comp_platform, id_vars=['Platform'], var_name='Sale_Area', value_name='Sales')
+plt.figure(figsize=(30, 15))
+sns.barplot(x='Platform', y='Sales', hue='Sale_Area', data=comp_table)
+plt.xticks(fontsize=14)
+plt.title("Regional Sales by Platform")
+plt.show()
+
+# Visualization: Top publishers by game count
+top_publishers = data['Publisher'].value_counts().nlargest(20).index
+plt.figure(figsize=(15, 10))
+sns.countplot(x="Publisher", data=data, order=top_publishers)
+plt.xticks(rotation=90)
+plt.title("Top 20 Publishers by Game Count")
+plt.show()
+
+# Visualization: Top publishers by global sales
+top_sales_publishers = data.groupby('Publisher')['Global_Sales'].sum().nlargest(20).reset_index()
+plt.figure(figsize=(15, 10))
+sns.barplot(x='Publisher', y='Global_Sales', data=top_sales_publishers)
+plt.xticks(rotation=90)
+plt.title("Top 20 Publishers by Global Sales")
+plt.show()
+
+# Visualization: Top publisher each year by game count
+top_publisher_yearly = data.groupby(['Year', 'Publisher']).size().reset_index(name='Count')
+top_publisher_yearly = top_publisher_yearly[top_publisher_yearly.groupby('Year')['Count'].transform(max) == top_publisher_yearly['Count']].drop_duplicates(['Year', 'Count'])
+plt.figure(figsize=(30, 15))
+sns.barplot(x='Year', y='Count', data=top_publisher_yearly)
+for index, row in top_publisher_yearly.iterrows():
+    plt.text(index, row['Count'] + 5, f"{row['Publisher']} ---- {row['Count']}", ha="center", rotation=90, fontsize=14)
+plt.xticks(rotation=90)
+plt.title("Top Publisher Each Year by Game Count")
+plt.show()
+
+# Visualization: Total revenue by region
+total_sales_region = data[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum().reset_index(name='Sales')
+total_sales_region.columns = ['Region', 'Sales']
+plt.figure(figsize=(12, 8))
+sns.barplot(x='Region', y='Sales', data=total_sales_region)
+plt.title("Total Revenue by Region")
+plt.show()
+
+# Visualization: Sales percentage by region (Pie Chart)
+labels = total_sales_region['Region']
+sizes = total_sales_region['Sales']
+plt.figure(figsize=(10, 8))
+plt.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
+plt.title("Regional Sales Percentage")
+plt.show()
